@@ -1,0 +1,9 @@
+{
+  "name": "calendario-fotos-pareja",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "check": "tsc --noEmit -p jsconfig.json"
+  }
+}

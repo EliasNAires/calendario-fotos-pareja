@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es-AR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Nuestros días</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,400;1,500;1,600&family=Inter:wght@400;500;600&display=swap"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="js/app.js"></script>
+  </head>
+  <body>
+    <section id="entrada" class="entrada">
+      <h1 class="entrada-titulo" data-album-name>Nuestros días</h1>
+      <p class="entrada-demo" id="entrada-demo" hidden>Modo demo: fotos de mentira, nada sale de este navegador.</p>
+      <button type="button" class="boton" id="entrar">Entrar con Google</button>
+      <p class="entrada-error" id="entrada-error" role="alert" hidden></p>
+    </section>
+
+    <main id="calendario" class="calendario" hidden>
+      <header class="cal-cabecera">
+        <button type="button" class="cal-flecha" id="mes-anterior" aria-label="Mes anterior">‹</button>
+        <h2 class="cal-titulo" id="mes-titulo" aria-live="polite"></h2>
+        <button type="button" class="cal-flecha" id="mes-siguiente" aria-label="Mes siguiente">›</button>
+      </header>
+      <label class="cal-saltar">
+        <span class="visually-hidden">Ir a un mes con fotos</span>
+        <select id="mes-selector"></select>
+      </label>
+      <div class="cal-grilla" role="grid" aria-labelledby="mes-titulo">
+        <div class="cal-semana cal-dias-semana" role="row">
+          <abbr role="columnheader" title="lunes">L</abbr>
+          <abbr role="columnheader" title="martes">M</abbr>
+          <abbr role="columnheader" title="miércoles">M</abbr>
+          <abbr role="columnheader" title="jueves">J</abbr>
+          <abbr role="columnheader" title="viernes">V</abbr>
+          <abbr role="columnheader" title="sábado">S</abbr>
+          <abbr role="columnheader" title="domingo">D</abbr>
+        </div>
+        <div id="semanas"></div>
+      </div>
+    </main>
+  </body>
+</html>
