@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { pickSource } from '../js/sources/index.js';
+import { AuthError } from '../js/sources/errors.js';
 
 const storage = { getItem: () => null, setItem: () => {} };
 
@@ -11,11 +12,12 @@ test('con ?demo se usa la fuente simulada', async () => {
   assert.ok((await source.listPhotos()).length > 0);
 });
 
-test('sin ?demo se usa Drive, que todavía no está implementado', async () => {
-  const source = pickSource('', { storage });
+test('sin ?demo se usa Drive: arranca sin sesión y, sin config.js completo, avisa qué falta', async () => {
+  const session = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
+  const source = pickSource('', { storage, session });
   assert.equal(source.isSignedIn(), false);
-  await assert.rejects(source.signIn(), /no implementado/i);
-  await assert.rejects(source.listPhotos(), /no implementado/i);
+  await assert.rejects(source.listPhotos(), AuthError);
+  await assert.rejects(source.signIn(), /config\.js/);
 });
 
 test('con ?demo&fail las primeras escrituras del álbum fallan y después vuelven a andar', async () => {

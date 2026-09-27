@@ -77,6 +77,13 @@ export function createAlbumStore(source) {
 
     hasUnsavedChanges: () => dirty.size > 0,
 
+    /** Guarda ya lo pendiente, sin esperar el reintento programado (p. ej. después de volver a entrar). */
+    retryNow() {
+      if (!dirty.size || saving) return;
+      clearTimeout(timer);
+      save();
+    },
+
     setDayNote(date, note) {
       edit(`days.${date}`, () => (album.days[date] = { ...album.days[date], note }));
     },

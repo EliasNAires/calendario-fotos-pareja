@@ -1,5 +1,6 @@
 import { ALBUM_NAME } from '../config.js';
 import { pickSource, isDemo } from './sources/index.js';
+import { NoAccessError } from './sources/errors.js';
 import { createThumbnails } from './thumbs.js';
 import { createAlbumStore } from './album-store.js';
 import { DEFAULT_CLUSTER_RADIUS_METERS } from './album.js';
@@ -46,15 +47,23 @@ const state = {
 document.title = ALBUM_NAME;
 document.querySelector('[data-album-name]').textContent = ALBUM_NAME;
 $('entrada-demo').hidden = !isDemo(location.search);
-$('entrar').addEventListener('click', enter);
+$('entrar').addEventListener('click', () => enter());
+$('cambiar-cuenta').addEventListener('click', () => enter({ selectAccount: true }));
 
-async function enter() {
-  const button = /** @type {HTMLButtonElement} */ ($('entrar'));
+// Con una sesión todavía válida (recargar la página) se entra sin tocar nada.
+if (source.isSignedIn()) enter();
+
+/** `selectAccount`: entrar con otra cuenta de Google, no con la recordada. */
+async function enter({ selectAccount = false } = {}) {
+  const buttons = /** @type {HTMLButtonElement[]} */ ([$('entrar'), $('cambiar-cuenta')]);
   const error = $('entrada-error');
-  button.disabled = true;
+  const noAccess = $('sin-acceso');
+  for (const button of buttons) button.disabled = true;
   error.hidden = true;
+  noAccess.hidden = true;
+  $('entrar').hidden = false;
   try {
-    await source.signIn();
+    await source.signIn({ selectAccount });
     const [photos] = await Promise.all([source.listPhotos(), store.load()]);
     assignNewPhotos(photos);
     state.photos = photos;
@@ -67,12 +76,46 @@ async function enter() {
     renderMonthPicker();
     showView('calendario');
   } catch (err) {
-    error.textContent = err instanceof Error ? err.message : String(err);
+    if (err instanceof NoAccessError) {
+      $('sin-acceso-email').textContent = err.email;
+      noAccess.hidden = false;
+      $('entrar').hidden = true;
+    } else {
+      error.textContent = err instanceof Error ? err.message : String(err);
+      error.hidden = false;
+    }
+  } finally {
+    for (const button of buttons) button.disabled = false;
+  }
+}
+
+// Sesión perdida con la app abierta (401 o renovación fallida)
+
+const relogin = /** @type {HTMLDialogElement} */ ($('reingreso'));
+
+source.onSignedOut(() => {
+  if (!$('app').hidden && !relogin.open) relogin.showModal();
+});
+// Sin sesión no se puede hacer nada: Esc no lo cierra.
+relogin.addEventListener('cancel', (event) => event.preventDefault());
+
+$('reingresar').addEventListener('click', async () => {
+  const button = /** @type {HTMLButtonElement} */ ($('reingresar'));
+  const error = $('reingreso-error');
+  button.disabled = true;
+  error.hidden = true;
+  try {
+    await source.signIn();
+    relogin.close();
+    store.retryNow();
+  } catch (err) {
+    if (err instanceof NoAccessError) error.textContent = `${err.message} (${err.email})`;
+    else error.textContent = err instanceof Error ? err.message : String(err);
     error.hidden = false;
   } finally {
     button.disabled = false;
   }
-}
+});
 
 /** Lleva a su lugar (o a uno nuevo) cada foto con GPS que todavía no tiene. Se guarda con el resto. */
 function assignNewPhotos(photos) {

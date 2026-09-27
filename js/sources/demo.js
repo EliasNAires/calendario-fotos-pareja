@@ -103,6 +103,7 @@ export function createDemoSource({ storage = globalThis.localStorage, failWrites
       signedIn = true;
     },
     isSignedIn: () => signedIn,
+    onSignedOut: () => () => {}, // la sesión demo no se pierde
 
     async listPhotos() {
       photos ??= generatePhotos();

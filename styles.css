@@ -131,6 +131,50 @@ body {
   color: var(--accent);
 }
 
+.entrada-sin-acceso {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+}
+
+.entrada-sin-acceso p {
+  margin: 0;
+}
+
+.entrada-email {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+/* Se cerró la sesión con la app abierta */
+
+.reingreso {
+  width: min(360px, calc(100% - 32px));
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  text-align: center;
+}
+
+.reingreso::backdrop {
+  background: rgb(20 16 14 / 0.35);
+}
+
+.reingreso p {
+  margin: 0 0 1rem;
+}
+
+.reingreso .entrada-error {
+  margin: 1rem auto 0;
+}
+
+.reingreso-titulo {
+  margin: 0 0 0.5rem;
+  font: italic 500 1.75rem / 1.2 var(--serif);
+}
+
 /* App: pestañas y vistas */
 
 .app {

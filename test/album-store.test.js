@@ -165,3 +165,26 @@ test('editar mientras hay un error no adelanta ni posterga el reintento', async 
   assert.equal(source.writes, 1, 'reintenta a los 2 s del error, con la última edición');
   assert.equal(source.remote.days['2026-09-12'].note, 'Hola de nuevo');
 });
+
+test('retryNow reintenta ya el guardado que falló (p. ej. después de volver a entrar)', async () => {
+  const { store, source } = await loadedStore();
+  source.failNext = 1;
+  store.setDayNote('2026-09-12', 'Picnic');
+  await advance(1500);
+  assert.equal(source.writes, 0);
+
+  store.retryNow();
+  await flush();
+  assert.equal(source.writes, 1);
+  assert.equal(source.remote.days['2026-09-12'].note, 'Picnic');
+
+  await advance(30000);
+  assert.equal(source.writes, 1, 'no queda un reintento viejo programado');
+});
+
+test('retryNow sin nada pendiente no escribe', async () => {
+  const { store, source } = await loadedStore();
+  store.retryNow();
+  await flush();
+  assert.equal(source.writes, 0);
+});
