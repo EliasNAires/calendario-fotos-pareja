@@ -152,7 +152,8 @@ body {
   line-height: 1.125rem;
 }
 
-.panel .guardado {
+.panel .guardado,
+.visor .guardado {
   min-height: 1.125rem;
   margin: 2px 0 0;
 }
@@ -421,7 +422,7 @@ body {
 
 /* Panel del día: lateral en la computadora, desde abajo a pantalla completa en el celular. */
 
-body:has(.panel[open]) {
+body:has(.panel[open], .visor[open]) {
   overflow: hidden;
 }
 
@@ -535,6 +536,15 @@ body:has(.panel[open]) {
   margin: 0;
 }
 
+.panel-foto-abrir {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+
 .panel-foto .polaroid {
   width: 100%;
   height: auto;
@@ -569,5 +579,173 @@ body:has(.panel[open]) {
 
   .panel-fotos {
     gap: 12px;
+  }
+}
+
+/* Visor de foto: pantalla completa, la foto en su marco polaroid y el caption abajo. */
+
+.visor {
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 0 16px 16px;
+  border: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.visor[open] {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.visor::backdrop {
+  background: var(--bg);
+}
+
+.visor-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 12px 0;
+}
+
+.visor-hora {
+  margin: 0;
+  font: 500 1.125rem / 1.2 var(--sans);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Deja el scroll vertical y el zoom al navegador; el swipe horizontal lo maneja js/app.js. */
+.visor-escenario {
+  display: grid;
+  grid-template-columns: var(--touch) minmax(0, 1fr) var(--touch);
+  align-items: center;
+  gap: 12px;
+  min-height: 0;
+  touch-action: pan-y pinch-zoom;
+}
+
+.visor-marco {
+  container-type: size;
+  display: grid;
+  place-items: center;
+  height: 100%;
+  min-width: 0;
+}
+
+/* --ratio (ancho / alto) lo pone js/app.js al cargar: el marco ocupa todo lo que entra sin deformar la foto. */
+.visor-imagen {
+  width: min(100cqw, 100cqh * var(--ratio, 1));
+  height: auto;
+  aspect-ratio: var(--ratio, 1);
+  padding: 8px 8px 22px;
+}
+
+.visor-flecha {
+  width: var(--touch);
+  height: var(--touch);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text);
+  font: 1.5rem / 1 var(--sans);
+  cursor: pointer;
+  transition:
+    border-color var(--ease),
+    opacity var(--ease);
+}
+
+.visor-flecha:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.visor-flecha:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.visor-pie {
+  display: grid;
+  gap: 8px;
+  width: min(640px, 100%);
+  margin: 12px auto 0;
+}
+
+.visor-lugar {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  color: var(--sage);
+  font: italic 500 1.1875rem / 1.2 var(--serif);
+  text-underline-offset: 3px;
+}
+
+.visor-caption textarea {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: italic 500 1.1875rem / 1.4 var(--serif); /* 19px: Safari no hace zoom por debajo de 16px */
+  resize: none;
+}
+
+.visor-caption textarea::placeholder {
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .visor[open] {
+    animation: visor-abre 200ms ease-out;
+  }
+
+  .visor-imagen.entra {
+    animation: visor-entra 220ms ease-out;
+  }
+}
+
+@keyframes visor-abre {
+  from {
+    opacity: 0;
+  }
+}
+
+/* data-enter: 1 entra desde la derecha (siguiente), -1 desde la izquierda (anterior), 0 al abrir. */
+.visor-imagen[data-enter='1'] {
+  --enter-dx: 24px;
+}
+
+.visor-imagen[data-enter='-1'] {
+  --enter-dx: -24px;
+}
+
+@keyframes visor-entra {
+  from {
+    transform: translateX(var(--enter-dx, 0));
+    opacity: 0.4;
+  }
+}
+
+/* En pantallas táctiles se pasa con swipe: las flechas no se ven, pero siguen ahí para VoiceOver,
+   que se queda con los gestos de deslizar. */
+@media (hover: none) {
+  .visor-escenario {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .visor-flecha {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }

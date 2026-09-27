@@ -62,5 +62,29 @@
       </label>
       <div class="panel-fotos" id="panel-fotos"></div>
     </dialog>
+
+    <dialog id="visor" class="visor" aria-labelledby="visor-hora">
+      <header class="visor-cabecera">
+        <div class="panel-encabezado">
+          <h2 class="visor-hora" id="visor-hora"></h2>
+          <p class="guardado" role="status" aria-live="polite"></p>
+        </div>
+        <button type="button" class="panel-cerrar" id="visor-cerrar">Cerrar</button>
+      </header>
+      <div class="visor-escenario" id="visor-escenario">
+        <button type="button" class="visor-flecha" id="visor-anterior" aria-label="Foto anterior">‹</button>
+        <div class="visor-marco">
+          <img class="visor-imagen polaroid" id="visor-imagen" alt="" />
+        </div>
+        <button type="button" class="visor-flecha" id="visor-siguiente" aria-label="Foto siguiente">›</button>
+      </div>
+      <footer class="visor-pie">
+        <a class="visor-lugar" id="visor-lugar" target="_blank" rel="noopener"></a>
+        <label class="visor-caption">
+          <span class="visually-hidden">Caption de la foto</span>
+          <textarea id="visor-caption" rows="2" placeholder="Escribí algo de esta foto…"></textarea>
+        </label>
+      </footer>
+    </dialog>
   </body>
 </html>
