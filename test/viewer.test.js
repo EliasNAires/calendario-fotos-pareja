@@ -39,13 +39,13 @@ test('el alt es el caption; sin caption, la fecha y la hora', () => {
   assert.equal(photoAlt('   ', '14 de marzo', '17:42'), 'Foto del 14 de marzo a las 17:42');
 });
 
-test('una foto en un lugar muestra su nombre con link a Google Maps en las coordenadas del lugar', () => {
+test('una foto en un lugar muestra su nombre y lleva al detalle del lugar', () => {
   const album = emptyAlbum();
   album.places.p_abc12345 = { name: 'La plaza', lat: -34.578, lng: -58.427 };
   album.photos.f1 = { caption: '', placeId: 'p_abc12345' };
   assert.deepEqual(placeLink({ id: 'f1', lat: -34.5781, lng: -58.4271 }, album), {
     label: 'La plaza',
-    href: 'https://www.google.com/maps?q=-34.578,-58.427',
+    placeId: 'p_abc12345',
   });
 });
 

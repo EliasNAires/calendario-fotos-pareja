@@ -2,12 +2,15 @@ import { ALBUM_NAME } from '../config.js';
 import { pickSource, isDemo } from './sources/index.js';
 import { createThumbnails } from './thumbs.js';
 import { createAlbumStore } from './album-store.js';
+import { DEFAULT_CLUSTER_RADIUS_METERS } from './album.js';
 import { monthGrid, photosByDay, monthsWithPhotos, rotationFor } from './calendar.js';
+import { assignPlaces, placeGroups, visits, dateRange, dayPlace, mapsUrl, placeLabel } from './places.js';
 import { swipeDirection, keyAction, stepIndex, photoAlt, placeLink } from './viewer.js';
 
 const MAX_STACK = 3; // si cambia, ajustar .pila en styles.css; en el celular el CSS deja ver solo la primera
 const THUMB_SIZE = 160; // px pedidos a la fuente; se muestran más chicas (pantallas retina)
 const PANEL_THUMB_SIZE = 320; // el panel las muestra a ~200px de ancho; el visor la usa de placeholder
+const CARD_THUMB_SIZE = 240;
 const VIEWER_SIZE = 1600;
 
 const $ = (id) => document.getElementById(id);
@@ -25,11 +28,14 @@ const longDayLabel = new Intl.DateTimeFormat('es-AR', {
   year: 'numeric',
   timeZone: 'UTC',
 });
+// "sábado, 14 de marzo de 2026" → "sábado 14 de marzo de 2026"
+const dayTitle = (date) => longDayLabel.format(dayFromIso(date)).replace(',', '');
 const utc = (year, month, day = 1) => new Date(Date.UTC(year, month - 1, day));
 const dayFromIso = (iso) => utc(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)), Number(iso.slice(8, 10)));
 const monthKey = ({ year, month }) => `${year}-${String(month).padStart(2, '0')}`;
 
 const state = {
+  photos: [],
   byDay: new Map(),
   months: [],
   current: null, // { year, month }
@@ -50,20 +56,52 @@ async function enter() {
   try {
     await source.signIn();
     const [photos] = await Promise.all([source.listPhotos(), store.load()]);
+    assignNewPhotos(photos);
+    state.photos = photos;
     state.byDay = photosByDay(photos);
     state.months = monthsWithPhotos(photos);
     const now = new Date();
     state.current = state.months.at(-1) ?? { year: now.getFullYear(), month: now.getMonth() + 1 };
     $('entrada').hidden = true;
-    $('calendario').hidden = false;
+    $('app').hidden = false;
     renderMonthPicker();
-    renderMonth();
+    showView('calendario');
   } catch (err) {
     error.textContent = err instanceof Error ? err.message : String(err);
     error.hidden = false;
   } finally {
     button.disabled = false;
   }
+}
+
+/** Lleva a su lugar (o a uno nuevo) cada foto con GPS que todavía no tiene. Se guarda con el resto. */
+function assignNewPhotos(photos) {
+  const album = store.get();
+  const radius = album.settings?.clusterRadiusMeters ?? DEFAULT_CLUSTER_RADIUS_METERS;
+  const { newPlaces, assignments } = assignPlaces(photos, album, radius);
+  for (const [placeId, place] of Object.entries(newPlaces)) store.setPlace(placeId, place);
+  for (const [fileId, placeId] of Object.entries(assignments)) store.setPhotoPlace(fileId, placeId);
+}
+
+// Vistas: calendario, lugares y detalle de un lugar (dentro de la pestaña "Lugares")
+
+/** Vista → cómo redibujarla al mostrarla. El detalle lo dibuja `openPlace` antes de mostrarlo. */
+const VIEWS = { calendario: () => renderMonth(), lugares: () => renderPlaces(), lugar: () => {} };
+
+for (const tab of document.querySelectorAll('.pestana')) {
+  tab.addEventListener('click', () => showView(/** @type {HTMLElement} */ (tab).dataset.vista));
+}
+
+/** Muestra una vista y la vuelve a dibujar: un nombre de lugar editado se ve en todas. */
+function showView(name) {
+  for (const view of Object.keys(VIEWS)) $(`vista-${view}`).hidden = view !== name;
+  const tabName = name === 'lugar' ? 'lugares' : name;
+  for (const tab of document.querySelectorAll('.pestana')) {
+    if (/** @type {HTMLElement} */ (tab).dataset.vista === tabName) tab.setAttribute('aria-current', 'page');
+    else tab.removeAttribute('aria-current');
+  }
+  VIEWS[name]();
+  scrollTo(0, 0);
 }
 
 // Guardado
@@ -169,8 +207,20 @@ function renderDay({ date, day, inMonth }) {
     open.addEventListener('click', () => openDay(date));
     cell.append(open);
     renderCellNote(cell);
+    renderCellPlace(cell, photos);
   }
   return cell;
+}
+
+/** Indicador del lugar con nombre con más fotos del día. */
+function renderCellPlace(cell, photos) {
+  const place = dayPlace(photos, store.get());
+  if (!place) return;
+  const el = document.createElement('span');
+  el.className = 'dia-lugar';
+  el.textContent = place.name;
+  cell.append(el);
+  cell.classList.add('con-lugar');
 }
 
 /** Primera línea de la nota del día, truncada por CSS. */
@@ -225,11 +275,16 @@ noteInput.addEventListener('input', () => {
 
 function openDay(date) {
   panel.dataset.date = date;
-  // "sábado, 14 de marzo de 2026" → "sábado 14 de marzo de 2026"
-  $('panel-titulo').textContent = longDayLabel.format(dayFromIso(date)).replace(',', '');
+  $('panel-titulo').textContent = dayTitle(date);
   noteInput.value = store.get().days[date]?.note ?? '';
 
-  const photos = state.byDay.get(date) ?? [];
+  $('panel-fotos').replaceChildren(...photoFigures(state.byDay.get(date) ?? []));
+  panel.showModal();
+  panel.scrollTop = 0;
+}
+
+/** Miniaturas con su hora; al tocar una se abre el visor, que navega entre `photos`. */
+function photoFigures(photos) {
   const buttons = photos.map((photo, index) => {
     const open = document.createElement('button');
     open.type = 'button';
@@ -238,7 +293,7 @@ function openDay(date) {
     open.addEventListener('click', () => openViewer(photos, index, buttons));
     return open;
   });
-  const figures = buttons.map((open, index) => {
+  return buttons.map((open, index) => {
     const figure = document.createElement('figure');
     figure.className = 'panel-foto';
     const caption = document.createElement('figcaption');
@@ -246,9 +301,93 @@ function openDay(date) {
     figure.append(open, caption);
     return figure;
   });
-  $('panel-fotos').replaceChildren(...figures);
-  panel.showModal();
-  panel.scrollTop = 0;
+}
+
+// Lugares
+
+const placeName = /** @type {HTMLInputElement} */ ($('lugar-nombre'));
+const placeSummary = (photos) => `${dateRange(photos)} · ${photos.length} ${photos.length === 1 ? 'foto' : 'fotos'}`;
+
+$('lugar-volver').addEventListener('click', () => showView('lugares'));
+
+placeName.addEventListener('input', () => store.setPlace(placeName.dataset.placeId, { name: placeName.value }));
+placeName.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') placeName.blur();
+});
+
+function renderPlaces() {
+  const { places, unlocated } = placeGroups(state.photos, store.get());
+  const cards = places.map((place) =>
+    placeCard(placeLabel(place), place.photos, () => openPlace(place.id)),
+  );
+  if (unlocated.length) {
+    const card = placeCard('Sin ubicación', unlocated, () => openPlace(null));
+    card.classList.add('sin-ubicacion');
+    cards.push(card);
+  }
+  $('lugares-lista').replaceChildren(...cards);
+}
+
+/** Tarjeta con las últimas fotos apiladas, el nombre, el rango de fechas y la cantidad. */
+function placeCard(name, photos, onOpen) {
+  const item = document.createElement('li');
+  item.className = 'lugar-tarjeta';
+  const open = document.createElement('button');
+  open.type = 'button';
+  open.className = 'lugar-tarjeta-abrir';
+  open.addEventListener('click', onOpen);
+
+  const stack = document.createElement('div');
+  stack.className = 'lugar-pila';
+  stack.setAttribute('aria-hidden', 'true');
+  // La foto más reciente queda arriba: se agrega última.
+  for (const photo of photos.slice(-MAX_STACK)) {
+    const img = thumbnails.img(photo, CARD_THUMB_SIZE, '');
+    img.style.setProperty('--rot', `${rotationFor(photo.id)}deg`);
+    stack.append(img);
+  }
+  const title = document.createElement('span');
+  title.className = 'lugar-tarjeta-nombre';
+  title.textContent = name;
+  const details = document.createElement('span');
+  details.className = 'lugar-tarjeta-datos';
+  details.textContent = placeSummary(photos);
+
+  open.append(stack, title, details);
+  item.append(open);
+  return item;
+}
+
+/** Detalle de un lugar, o de las fotos sin ubicación si `placeId` es null. */
+function openPlace(placeId) {
+  const { places, unlocated } = placeGroups(state.photos, store.get());
+  const place = places.find((p) => p.id === placeId);
+  const photos = place?.photos ?? unlocated;
+
+  $('lugar-nombre-campo').hidden = !place;
+  $('lugar-sin-ubicacion').hidden = Boolean(place);
+  placeName.dataset.placeId = placeId ?? '';
+  placeName.value = place?.name ?? '';
+  const mapLink = /** @type {HTMLAnchorElement} */ ($('lugar-mapa'));
+  mapLink.hidden = !place;
+  if (place) mapLink.href = mapsUrl(place.lat, place.lng);
+  $('lugar-resumen').textContent = photos.length ? placeSummary(photos) : '';
+
+  const sections = visits(photos).map((visit) => {
+    const section = document.createElement('section');
+    section.className = 'visita';
+    const heading = document.createElement('h3');
+    heading.className = 'visita-titulo';
+    heading.textContent = dayTitle(visit.date);
+    const grid = document.createElement('div');
+    grid.className = 'panel-fotos';
+    grid.append(...photoFigures(visit.photos));
+    section.append(heading, grid);
+    return section;
+  });
+  $('lugar-visitas').replaceChildren(...sections);
+  showView('lugar');
+  $('lugar-volver').focus();
 }
 
 // Visor de foto
@@ -269,6 +408,16 @@ const viewerState = {
 };
 
 $('visor-cerrar').addEventListener('click', () => viewer.close());
+
+// El lugar de la foto lleva a su detalle: se cierran el visor y el panel del día.
+placeAnchor.addEventListener('click', (event) => {
+  const { placeId } = placeAnchor.dataset;
+  if (!placeId) return; // link a Google Maps
+  event.preventDefault();
+  viewer.close();
+  panel.close();
+  openPlace(placeId);
+});
 prevButton.addEventListener('click', () => moveViewer(-1));
 nextButton.addEventListener('click', () => moveViewer(1));
 
@@ -343,7 +492,15 @@ function showPhoto(index, direction) {
   placeAnchor.hidden = !place;
   if (place) {
     placeAnchor.textContent = place.label;
-    placeAnchor.href = place.href;
+    if ('placeId' in place) {
+      placeAnchor.href = `#${place.placeId}`;
+      placeAnchor.removeAttribute('target');
+      placeAnchor.dataset.placeId = place.placeId;
+    } else {
+      placeAnchor.href = place.href;
+      placeAnchor.target = '_blank';
+      delete placeAnchor.dataset.placeId;
+    }
   }
   prevButton.disabled = index === 0;
   nextButton.disabled = index === length - 1;

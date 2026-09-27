@@ -131,16 +131,16 @@ body {
   color: var(--accent);
 }
 
-/* Calendario */
+/* App: pestañas y vistas */
 
-.calendario {
+.app {
   max-width: 960px;
   margin: 0 auto;
   padding: 16px;
 }
 
 /* Indicador de guardado: discreto, arriba a la derecha, con su lugar reservado para que nada salte. */
-.calendario > .guardado {
+.app > .guardado {
   min-height: 1.125rem;
   margin: -8px 0 2px;
   text-align: right;
@@ -161,6 +161,39 @@ body {
 .guardado[data-status='error'] {
   color: var(--accent);
 }
+
+.pestanas {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.pestana {
+  min-height: var(--touch);
+  padding: 0 1.25rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: none;
+  color: var(--muted);
+  font: 500 0.9375rem var(--sans);
+  cursor: pointer;
+  transition:
+    border-color var(--ease),
+    color var(--ease);
+}
+
+.pestana:hover {
+  color: var(--text);
+}
+
+.pestana[aria-current='page'] {
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--accent);
+}
+
+/* Calendario */
 
 .cal-cabecera {
   display: grid;
@@ -297,6 +330,21 @@ body {
   bottom: 22px;
 }
 
+/* Lugar con nombre con más fotos del día, en la misma línea que el número. */
+.dia-lugar {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  left: 28px;
+  z-index: 1;
+  overflow: hidden;
+  color: var(--sage);
+  font: italic 500 0.875rem / 1.2 var(--serif);
+  text-align: right;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 /* Pila de miniaturas: hasta 3 (MAX_STACK en js/app.js), cada una con su rotación estable. */
 .pila {
   position: absolute;
@@ -352,7 +400,7 @@ body {
 }
 
 @media (max-width: 600px) {
-  .calendario {
+  .app {
     padding: 12px 16px;
   }
 
@@ -410,6 +458,13 @@ body {
     font-size: 0.6875rem;
   }
 
+  .dia-lugar {
+    top: 3px;
+    right: 3px;
+    left: 18px;
+    font-size: 0.6875rem;
+  }
+
   .dia.con-nota .pila,
   .dia.con-nota .contador {
     bottom: 14px;
@@ -418,6 +473,180 @@ body {
   .contador.solo-celular {
     display: block;
   }
+}
+
+/* Lugares: tarjetas con fotos apiladas. El verde salvia es solo para lo relacionado con lugares. */
+
+.lugares {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lugar-tarjeta-abrir {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+  padding: 16px 16px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: box-shadow var(--ease);
+}
+
+.lugar-tarjeta-abrir:hover {
+  box-shadow: inset 0 0 0 1px var(--sage);
+}
+
+.lugar-pila {
+  display: grid;
+  place-items: center;
+  height: 150px;
+  margin-bottom: 12px;
+}
+
+.lugar-pila .polaroid {
+  grid-area: 1 / 1;
+  width: 118px;
+  height: auto;
+  aspect-ratio: 1;
+  padding: 5px 5px 12px;
+  transform: translateX(var(--dx, 0)) rotate(var(--rot, 0deg));
+}
+
+.lugar-pila .polaroid:nth-last-child(2) {
+  --dx: 14%;
+}
+
+.lugar-pila .polaroid:nth-last-child(3) {
+  --dx: -14%;
+}
+
+.lugar-tarjeta-nombre {
+  overflow: hidden;
+  color: var(--sage);
+  font: italic 500 1.375rem / 1.25 var(--serif);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 600px) {
+  .lugares {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .lugar-tarjeta-abrir {
+    padding: 12px 10px 10px;
+  }
+
+  .lugar-pila {
+    height: 110px;
+    margin-bottom: 8px;
+  }
+
+  .lugar-pila .polaroid {
+    width: 84px;
+    padding: 4px 4px 9px;
+  }
+
+  .lugar-tarjeta-nombre {
+    font-size: 1.1875rem;
+  }
+}
+
+.sin-ubicacion .lugar-tarjeta-nombre {
+  color: var(--muted);
+}
+
+.lugar-tarjeta-datos,
+.lugar-datos {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Detalle del lugar */
+
+.lugar-titulo {
+  margin: 16px 0 0;
+  color: var(--sage);
+  font: italic 500 clamp(1.75rem, 6vw, 2.25rem) / 1.2 var(--serif);
+}
+
+.lugar-titulo input {
+  width: 100%;
+  min-height: var(--touch);
+  padding: 0 0.5rem;
+  margin-left: -0.5rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  transition: border-color var(--ease);
+}
+
+.lugar-titulo input:hover,
+.lugar-titulo input:focus {
+  border-color: var(--line);
+  background: var(--surface);
+}
+
+.lugar-titulo input::placeholder {
+  color: var(--sage);
+  opacity: 1; /* Safari y Firefox le bajan la opacidad por defecto: sin esto no llega a AA */
+}
+
+#lugar-sin-ubicacion {
+  color: var(--text);
+}
+
+.lugar-datos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 1rem;
+  margin: 0 0 8px;
+}
+
+.lugar-mapa {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  color: var(--sage);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-underline-offset: 3px;
+}
+
+.visita {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.visita-titulo {
+  margin: 0;
+  font: italic 500 1.375rem / 1.2 var(--serif);
+}
+
+.visita-titulo::first-letter {
+  text-transform: uppercase;
+}
+
+.visita .panel-fotos {
+  grid-template-columns: repeat(auto-fill, minmax(min(150px, 40%), 1fr));
+  margin-top: 12px;
 }
 
 /* Panel del día: lateral en la computadora, desde abajo a pantalla completa en el celular. */

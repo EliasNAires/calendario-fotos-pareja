@@ -1,4 +1,5 @@
 // Modelo puro del visor de fotos: gestos, teclado y textos. Sin DOM.
+import { mapsUrl, placeLabel, hasGps } from './places.js';
 
 const SWIPE_THRESHOLD_PX = 50;
 
@@ -35,17 +36,16 @@ export function photoAlt(caption, dateText, hour) {
   return caption.trim() || `Foto del ${dateText} a las ${hour}`;
 }
 
-const mapsUrl = (lat, lng) => `https://www.google.com/maps?q=${lat},${lng}`;
-
 /**
- * Lugar de la foto para el visor: su lugar del álbum si tiene uno; si no, sus coordenadas.
- * Hasta que exista la vista de lugares (#5), el link va a Google Maps.
- * @returns {{ label: string, href: string } | null}
+ * Lugar de la foto para el visor: su lugar del álbum (lleva al detalle) si tiene uno; si no, sus
+ * coordenadas en Google Maps.
+ * @returns {{ label: string, placeId: string } | { label: string, href: string } | null}
  */
 export function placeLink(photo, album) {
-  const place = album.places[album.photos[photo.id]?.placeId];
-  if (place) return { label: place.name || 'Lugar sin nombre', href: mapsUrl(place.lat, place.lng) };
-  if (typeof photo.lat === 'number' && typeof photo.lng === 'number') {
+  const placeId = album.photos[photo.id]?.placeId;
+  const place = album.places[placeId];
+  if (place) return { label: placeLabel(place), placeId };
+  if (hasGps(photo)) {
     return { label: 'Ver en el mapa', href: mapsUrl(photo.lat, photo.lng) };
   }
   return null;

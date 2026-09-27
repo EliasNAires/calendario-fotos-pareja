@@ -22,29 +22,56 @@
       <p class="entrada-error" id="entrada-error" role="alert" hidden></p>
     </section>
 
-    <main id="calendario" class="calendario" hidden>
+    <main id="app" class="app" hidden>
       <p class="guardado" role="status" aria-live="polite"></p>
-      <header class="cal-cabecera">
-        <button type="button" class="cal-flecha" id="mes-anterior" aria-label="Mes anterior">‹</button>
-        <h2 class="cal-titulo" id="mes-titulo" aria-live="polite"></h2>
-        <button type="button" class="cal-flecha" id="mes-siguiente" aria-label="Mes siguiente">›</button>
-      </header>
-      <label class="cal-saltar">
-        <span class="visually-hidden">Ir a un mes con fotos</span>
-        <select id="mes-selector"></select>
-      </label>
-      <div class="cal-grilla" role="grid" aria-labelledby="mes-titulo">
-        <div class="cal-semana cal-dias-semana" role="row">
-          <abbr role="columnheader" title="lunes">L</abbr>
-          <abbr role="columnheader" title="martes">M</abbr>
-          <abbr role="columnheader" title="miércoles">M</abbr>
-          <abbr role="columnheader" title="jueves">J</abbr>
-          <abbr role="columnheader" title="viernes">V</abbr>
-          <abbr role="columnheader" title="sábado">S</abbr>
-          <abbr role="columnheader" title="domingo">D</abbr>
+      <nav class="pestanas" aria-label="Secciones">
+        <button type="button" class="pestana" data-vista="calendario" aria-current="page">Calendario</button>
+        <button type="button" class="pestana" data-vista="lugares">Lugares</button>
+      </nav>
+
+      <section id="vista-calendario" aria-label="Calendario">
+        <header class="cal-cabecera">
+          <button type="button" class="cal-flecha" id="mes-anterior" aria-label="Mes anterior">‹</button>
+          <h2 class="cal-titulo" id="mes-titulo" aria-live="polite"></h2>
+          <button type="button" class="cal-flecha" id="mes-siguiente" aria-label="Mes siguiente">›</button>
+        </header>
+        <label class="cal-saltar">
+          <span class="visually-hidden">Ir a un mes con fotos</span>
+          <select id="mes-selector"></select>
+        </label>
+        <div class="cal-grilla" role="grid" aria-labelledby="mes-titulo">
+          <div class="cal-semana cal-dias-semana" role="row">
+            <abbr role="columnheader" title="lunes">L</abbr>
+            <abbr role="columnheader" title="martes">M</abbr>
+            <abbr role="columnheader" title="miércoles">M</abbr>
+            <abbr role="columnheader" title="jueves">J</abbr>
+            <abbr role="columnheader" title="viernes">V</abbr>
+            <abbr role="columnheader" title="sábado">S</abbr>
+            <abbr role="columnheader" title="domingo">D</abbr>
+          </div>
+          <div id="semanas"></div>
         </div>
-        <div id="semanas"></div>
-      </div>
+      </section>
+
+      <section id="vista-lugares" aria-label="Lugares" hidden>
+        <ul class="lugares" id="lugares-lista"></ul>
+      </section>
+
+      <section id="vista-lugar" class="lugar" aria-labelledby="lugar-titulo" hidden>
+        <button type="button" class="panel-cerrar" id="lugar-volver">‹ Lugares</button>
+        <h2 class="lugar-titulo" id="lugar-titulo">
+          <label id="lugar-nombre-campo">
+            <span class="visually-hidden">Nombre del lugar</span>
+            <input id="lugar-nombre" type="text" autocomplete="off" enterkeyhint="done" placeholder="Lugar sin nombre" />
+          </label>
+          <span id="lugar-sin-ubicacion">Sin ubicación</span>
+        </h2>
+        <p class="lugar-datos">
+          <span id="lugar-resumen"></span>
+          <a class="lugar-mapa" id="lugar-mapa" target="_blank" rel="noopener">Ver en Google Maps</a>
+        </p>
+        <div id="lugar-visitas"></div>
+      </section>
     </main>
 
     <dialog id="panel-dia" class="panel" aria-labelledby="panel-titulo">
