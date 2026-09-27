@@ -23,6 +23,7 @@
     </section>
 
     <main id="calendario" class="calendario" hidden>
+      <p class="guardado" role="status" aria-live="polite"></p>
       <header class="cal-cabecera">
         <button type="button" class="cal-flecha" id="mes-anterior" aria-label="Mes anterior">‹</button>
         <h2 class="cal-titulo" id="mes-titulo" aria-live="polite"></h2>
@@ -45,5 +46,21 @@
         <div id="semanas"></div>
       </div>
     </main>
+
+    <dialog id="panel-dia" class="panel" aria-labelledby="panel-titulo">
+      <header class="panel-cabecera">
+        <div class="panel-encabezado">
+          <h2 class="panel-titulo" id="panel-titulo"></h2>
+          <!-- Mientras el panel está abierto el resto de la página queda inerte: el estado se muestra también acá. -->
+          <p class="guardado" role="status" aria-live="polite"></p>
+        </div>
+        <button type="button" class="panel-cerrar" id="panel-cerrar">Cerrar</button>
+      </header>
+      <label class="panel-nota">
+        <span class="visually-hidden">Nota del día</span>
+        <textarea id="panel-nota" rows="3" placeholder="Escribí algo de este día…"></textarea>
+      </label>
+      <div class="panel-fotos" id="panel-fotos"></div>
+    </dialog>
   </body>
 </html>

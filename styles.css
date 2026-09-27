@@ -139,6 +139,28 @@ body {
   padding: 16px;
 }
 
+/* Indicador de guardado: discreto, arriba a la derecha, con su lugar reservado para que nada salte. */
+.calendario > .guardado {
+  min-height: 1.125rem;
+  margin: -8px 0 2px;
+  text-align: right;
+}
+
+.guardado {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.125rem;
+}
+
+.panel .guardado {
+  min-height: 1.125rem;
+  margin: 2px 0 0;
+}
+
+.guardado[data-status='error'] {
+  color: var(--accent);
+}
+
 .cal-cabecera {
   display: grid;
   grid-template-columns: var(--touch) 1fr var(--touch);
@@ -238,6 +260,40 @@ body {
 
 .dia.fuera {
   visibility: hidden;
+}
+
+/* Botón invisible que cubre la celda de un día con fotos y abre el panel. */
+.dia-abrir {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: none;
+  cursor: pointer;
+  transition: box-shadow var(--ease);
+}
+
+.dia-abrir:hover {
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.dia-nota {
+  position: absolute;
+  right: 6px;
+  bottom: 4px;
+  left: 6px;
+  z-index: 1;
+  overflow: hidden;
+  font: italic 500 0.875rem / 1.2 var(--serif);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.dia.con-nota .pila,
+.dia.con-nota .contador {
+  bottom: 22px;
 }
 
 /* Pila de miniaturas: hasta 3 (MAX_STACK en js/app.js), cada una con su rotación estable. */
@@ -346,7 +402,172 @@ body {
     display: none;
   }
 
+  .dia-nota {
+    right: 3px;
+    bottom: 1px;
+    left: 3px;
+    font-size: 0.6875rem;
+  }
+
+  .dia.con-nota .pila,
+  .dia.con-nota .contador {
+    bottom: 14px;
+  }
+
   .contador.solo-celular {
     display: block;
+  }
+}
+
+/* Panel del día: lateral en la computadora, desde abajo a pantalla completa en el celular. */
+
+body:has(.panel[open]) {
+  overflow: hidden;
+}
+
+.panel {
+  width: min(440px, 100%);
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0 0 0 auto;
+  padding: 0 16px 24px;
+  border: 0;
+  border-left: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--text);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.panel::backdrop {
+  background: rgb(20 16 14 / 0.35);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .panel[open] {
+    animation: panel-lateral 220ms ease-out;
+  }
+}
+
+@keyframes panel-lateral {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+
+@keyframes panel-abajo {
+  from {
+    transform: translateY(32px);
+    opacity: 0;
+  }
+}
+
+.panel-cabecera {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 12px 0;
+  background: var(--bg);
+}
+
+.panel-encabezado {
+  min-width: 0;
+}
+
+.panel-titulo {
+  margin: 0;
+  font: italic 500 1.5rem / 1.2 var(--serif);
+}
+
+.panel-titulo::first-letter {
+  text-transform: uppercase;
+}
+
+.panel-cerrar {
+  flex: none;
+  min-width: var(--touch);
+  min-height: var(--touch);
+  padding: 0 1rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font: 500 0.9375rem var(--sans);
+  cursor: pointer;
+  transition: border-color var(--ease);
+}
+
+.panel-cerrar:hover {
+  border-color: var(--accent);
+}
+
+.panel-nota textarea {
+  display: block;
+  width: 100%;
+  min-height: 5.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: italic 500 1.1875rem / 1.4 var(--serif); /* 19px: Safari no hace zoom por debajo de 16px */
+  resize: vertical;
+}
+
+.panel-nota textarea::placeholder {
+  color: var(--muted);
+}
+
+.panel-fotos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.panel-foto {
+  margin: 0;
+}
+
+.panel-foto .polaroid {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  padding: 6px 6px 14px;
+}
+
+.panel-foto figcaption {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .panel {
+    width: 100%;
+    margin: 0;
+    border-left: 0;
+  }
+
+  .panel::backdrop {
+    background: var(--bg);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .panel[open] {
+      animation-name: panel-abajo;
+    }
+  }
+
+  .panel-fotos {
+    gap: 12px;
   }
 }

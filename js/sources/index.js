@@ -9,7 +9,12 @@ import { createDriveSource } from './drive.js';
 
 export const isDemo = (search) => new URLSearchParams(search).has('demo');
 
-/** `?demo` en la URL → DemoSource; si no, DriveSource. */
+// Con `?demo&fail`, las primeras escrituras fallan: alcanza para ver el error y un reintento fallido.
+const SIMULATED_WRITE_FAILURES = 2;
+
+/** `?demo` en la URL → DemoSource (`&fail` simula errores al guardar); si no, DriveSource. */
 export function pickSource(search, options = {}) {
-  return isDemo(search) ? createDemoSource(options) : createDriveSource();
+  if (!isDemo(search)) return createDriveSource();
+  const failWrites = new URLSearchParams(search).has('fail') ? SIMULATED_WRITE_FAILURES : 0;
+  return createDemoSource({ failWrites, ...options });
 }

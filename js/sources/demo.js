@@ -92,7 +92,8 @@ function placeholderSvg(photo, size) {
 </svg>`;
 }
 
-export function createDemoSource({ storage = globalThis.localStorage } = {}) {
+/** `failWrites`: cuántas de las primeras escrituras del álbum fallan (para `?demo&fail`). */
+export function createDemoSource({ storage = globalThis.localStorage, failWrites = 0 } = {}) {
   let signedIn = false;
   let photos = null;
   const save = (album) => storage.setItem(ALBUM_KEY, JSON.stringify(album));
@@ -121,6 +122,10 @@ export function createDemoSource({ storage = globalThis.localStorage } = {}) {
     },
 
     async writeAlbum(album) {
+      if (failWrites > 0) {
+        failWrites--;
+        throw new Error('Error simulado al guardar (?demo&fail)');
+      }
       save(album);
     },
   };
